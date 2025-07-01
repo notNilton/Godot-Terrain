@@ -1,8 +1,8 @@
 [gd_scene load_steps=9 format=3 uid="uid://bs3wao3xrtlmq"]
 
-[ext_resource type="Script" uid="uid://ck2rq7344ii1h" path="res://Scripts/camera_movement.gd" id="1_pyidc"]
+[ext_resource type="Script" uid="uid://ck2rq7344ii1h" path="res://scripts/camera_movement.gd" id="1_pyidc"]
 [ext_resource type="PackedScene" path="res://player.tscn" id="3_28aoi"]
-[ext_resource type="Script" uid="uid://epton8emsgj7" path="res://Scripts/world_generation.gd" id="3_vvh5c"]
+[ext_resource type="Script" uid="uid://epton8emsgj7" path="res://scripts/world_generation.gd" id="3_vvh5c"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_pyidc"]
 sky_horizon_color = Color(0.662243, 0.671743, 0.686743, 1)
@@ -40,12 +40,12 @@ script = ExtResource("1_pyidc")
 script = ExtResource("3_vvh5c")
 plane_size = Vector2(600, 600)
 
-[node name="@StaticBody3D@24462" type="StaticBody3D" parent="World Generation"]
+[node name="@StaticBody3D@21760" type="StaticBody3D" parent="World Generation"]
 
-[node name="@MeshInstance3D@24463" type="MeshInstance3D" parent="World Generation/@StaticBody3D@24462"]
+[node name="@MeshInstance3D@21761" type="MeshInstance3D" parent="World Generation/@StaticBody3D@21760"]
 mesh = SubResource("PlaneMesh_vvh5c")
 
-[node name="@CollisionShape3D@24464" type="CollisionShape3D" parent="World Generation/@StaticBody3D@24462"]
+[node name="@CollisionShape3D@21762" type="CollisionShape3D" parent="World Generation/@StaticBody3D@21760"]
 shape = SubResource("ConcavePolygonShape3D_28aoi")
 
 [node name="Player" parent="." instance=ExtResource("3_28aoi")]
