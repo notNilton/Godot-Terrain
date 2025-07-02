@@ -1,6 +1,6 @@
 [gd_scene load_steps=10 format=4 uid="uid://bs3wao3xrtlmq"]
 
-[ext_resource type="Script" uid="uid://dwknap8kd1x7q" path="res://sun.gd" id="1_vvh5c"]
+[ext_resource type="Script" uid="uid://dwknap8kd1x7q" path="res://scripts/sun.gd" id="1_vvh5c"]
 [ext_resource type="Script" uid="uid://epton8emsgj7" path="res://scripts/terrain_generation.gd" id="2_vvh5c"]
 [ext_resource type="PackedScene" uid="uid://qmw64tch7cmp" path="res://player.tscn" id="3_28aoi"]
 
@@ -61,14 +61,13 @@ height_amplitude = 34.6
 noise_octaves = 8
 noise_scale = 200.0
 
-[node name="@StaticBody3D@25706" type="StaticBody3D" parent="WorldGeneration"]
+[node name="@StaticBody3D@21760" type="StaticBody3D" parent="WorldGeneration"]
 
-[node name="@MeshInstance3D@25707" type="MeshInstance3D" parent="WorldGeneration/@StaticBody3D@25706"]
+[node name="@MeshInstance3D@21761" type="MeshInstance3D" parent="WorldGeneration/@StaticBody3D@21760"]
 material_override = SubResource("StandardMaterial3D_vvh5c")
 mesh = SubResource("ArrayMesh_28aoi")
 
-[node name="@CollisionShape3D@25708" type="CollisionShape3D" parent="WorldGeneration/@StaticBody3D@25706"]
-visible = false
+[node name="@CollisionShape3D@21762" type="CollisionShape3D" parent="WorldGeneration/@StaticBody3D@21760"]
 shape = SubResource("ConcavePolygonShape3D_jnlp7")
 
 [node name="Player" parent="." instance=ExtResource("3_28aoi")]
