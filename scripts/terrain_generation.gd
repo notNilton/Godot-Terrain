@@ -7,6 +7,13 @@ extends Node3D
 @export_range(2, 512, 1)  var res_x       : int       = 100
 @export_range(2, 512, 1)  var res_z       : int       = 100
 
+@export_group("Color Settings")
+@export var sea_level       : float = 0.2   # abaixo disto é “mar”
+@export var mountain_level  : float = 0.6   # acima disto é “montanha”
+@export var sea_color       : Color = Color(0.4, 0.6, 0.8)
+@export var ground_color    : Color = Color(0.7, 0.8, 0.6)
+@export var mountain_color  : Color = Color(0.9, 0.9, 0.9)
+
 @export_group("Height Settings")
 @export_range(0.0, 100.0, 0.1) var height_amplitude : float = 10.0
 @export var regenerate                  : bool      = false
@@ -48,6 +55,11 @@ func _build_terrain() -> void:
 	mi.mesh = terrain_mesh
 	body.add_child(mi)
 	mi.owner = get_owner()
+	
+	# depois de mi.mesh = terrain_mesh
+	var mat = StandardMaterial3D.new()
+	mat.vertex_color_use_as_albedo = true
+	mi.material_override = mat
 
 	# 4) cria CollisionShape3D
 	var col = CollisionShape3D.new()
@@ -59,6 +71,7 @@ func _create_terrain_mesh() -> ArrayMesh:
 	var m = ArrayMesh.new()
 	var verts   = PackedVector3Array()
 	var normals = PackedVector3Array()
+	var colors  = PackedColorArray()
 	var idx     = PackedInt32Array()
 
 	var half_x = plane_size.x * 0.5
@@ -66,14 +79,27 @@ func _create_terrain_mesh() -> ArrayMesh:
 
 	# gera vértices + normais básicas
 	for x in range(res_x + 1):
-		for z in range(res_z + 1):
-			var u  = float(x) / res_x
-			var v  = float(z) / res_z
-			var wx = u * plane_size.x - half_x
-			var wz = v * plane_size.y - half_z
-			var h  = _height_fbm(wx, wz)
-			verts.append(Vector3(wx, h, wz))
-			normals.append(Vector3.UP)
+			for z in range(res_z + 1):
+				var u = float(x) / res_x
+				var v = float(z) / res_z
+				var wx = u * plane_size.x - half_x
+				var wz = v * plane_size.y - half_z
+				var h  = _height_fbm(wx, wz)
+				verts.append(Vector3(wx, h, wz))
+				normals.append(Vector3.UP)
+
+				# — normaliza h para [0,1] e decide cor —
+				var hn = clamp(h / height_amplitude, 0.0, 1.0)
+				var col: Color
+				if hn < sea_level:
+					col = sea_color
+				elif hn < mountain_level:
+					# blend entre ground e mountain
+					var t = (hn - sea_level) / (mountain_level - sea_level)
+					col = ground_color.lerp(mountain_color, t)
+				else:
+					col = mountain_color
+				colors.append(col)
 
 	# índices de triângulos (2 por quad)
 	for x in range(res_x):
@@ -89,8 +115,10 @@ func _create_terrain_mesh() -> ArrayMesh:
 	arrays.resize(Mesh.ARRAY_MAX)
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_COLOR]  = colors     # ← aqui
 	arrays[Mesh.ARRAY_INDEX]  = idx
 	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+
 
 	return m
 
