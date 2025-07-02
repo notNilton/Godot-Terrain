@@ -2,15 +2,24 @@
 extends Node3D
 
 # — parâmetros do Inspector —
-@export var plane_size: Vector2         = Vector2(500, 500)
-@export var height_amplitude: float     = 10.0
-@export var regenerate: bool            = false
-@export_range(2, 512) var res_x: int    = 100
-@export_range(2, 512) var res_z: int    = 100
+@export var plane_size: Vector2        = Vector2(500, 500)
+@export_range(2, 512) var res_x: int   = 100
+@export_range(2, 512) var res_z: int   = 100
+@export var height_amplitude: float    = 10.0
+@export var regenerate: bool           = false
+
+# — parâmetros da fBM —
+@export var noise_seed: int            = 0
+@export_range(1, 16) var noise_octaves: int   = 4
+@export var noise_lacunarity: float    = 2.0
+@export var noise_gain: float          = 0.5
+@export var noise_scale: float         = 50.0  # “zoom” do noise
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		set_process(true)
+		_build_terrain()
+	else:
 		_build_terrain()
 
 func _process(_delta: float) -> void:
@@ -20,52 +29,48 @@ func _process(_delta: float) -> void:
 
 func _build_terrain() -> void:
 	# 1) limpa geração anterior
-	for filho in get_children():
-		filho.queue_free()
+	for c in get_children():
+		c.queue_free()
 
-	# 2) Cria um StaticBody3D, pai do mesh e da colisão
+	# 2) StaticBody3D pai
 	var body = StaticBody3D.new()
 	add_child(body)
 	body.owner = get_owner()
 
-	# 3) Cria o MeshInstance3D usando o ArrayMesh gerado
-	var terrain_mesh: ArrayMesh = _create_terrain_mesh()
+	# 3) gera mesh + instancia MeshInstance3D
+	var terrain_mesh = _create_terrain_mesh()
 	var mi = MeshInstance3D.new()
 	mi.mesh = terrain_mesh
 	body.add_child(mi)
 	mi.owner = get_owner()
 
-	# 4) Cria o CollisionShape3D e o coloca como filho do StaticBody3D
+	# 4) cria CollisionShape3D
 	var col = CollisionShape3D.new()
 	col.shape = terrain_mesh.create_trimesh_shape()
 	body.add_child(col)
 	col.owner = get_owner()
 
-# --- função que gera de fato o ArrayMesh do terreno ---
 func _create_terrain_mesh() -> ArrayMesh:
-	var mesh = ArrayMesh.new()
-
+	var m = ArrayMesh.new()
 	var verts   = PackedVector3Array()
 	var normals = PackedVector3Array()
 	var idx     = PackedInt32Array()
 
 	var half_x = plane_size.x * 0.5
 	var half_z = plane_size.y * 0.5
-	var step_x = plane_size.x / float(res_x)
-	var step_z = plane_size.y / float(res_z)
 
-	# gera vértices e normais
+	# gera vértices + normais básicas
 	for x in range(res_x + 1):
 		for z in range(res_z + 1):
-			var ux = float(x) / res_x
-			var uz = float(z) / res_z
-			var world_x = ux * plane_size.x - half_x
-			var world_z = uz * plane_size.y - half_z
-			var height = _height_func(ux, uz)
-			verts.append(Vector3(world_x, height, world_z))
-			normals.append(Vector3.UP)  # substitua por cálculo de normal mais preciso depois
+			var u  = float(x) / res_x
+			var v  = float(z) / res_z
+			var wx = u * plane_size.x - half_x
+			var wz = v * plane_size.y - half_z
+			var h  = _height_fbm(wx, wz)
+			verts.append(Vector3(wx, h, wz))
+			normals.append(Vector3.UP)
 
-	# gera índices de triângulos (2 por quad)
+	# índices de triângulos (2 por quad)
 	for x in range(res_x):
 		for z in range(res_z):
 			var i0 = x * (res_z + 1) + z
@@ -80,10 +85,44 @@ func _create_terrain_mesh() -> ArrayMesh:
 	arrays[Mesh.ARRAY_VERTEX] = verts
 	arrays[Mesh.ARRAY_NORMAL] = normals
 	arrays[Mesh.ARRAY_INDEX]  = idx
+	m.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
 
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
-	return mesh
+	return m
 
-# função de altura “wavelike” — ponto de partida para evoluir depois
-func _height_func(u: float, v: float) -> float:
-	return sin(u * TAU) * cos(v * TAU) * height_amplitude
+func _height_fbm(wx: float, wz: float) -> float:
+	var nx = wx / noise_scale
+	var nz = wz / noise_scale
+	var amplitude = 1.0
+	var frequency = 1.0
+	var sum = 0.0
+	for i in range(noise_octaves):
+		sum += amplitude * _noise2d(nx * frequency, nz * frequency)
+		frequency *= noise_lacunarity
+		amplitude *= noise_gain
+	return sum * height_amplitude
+
+func _noise2d(x: float, y: float) -> float:
+	var xi = int(floor(x))
+	var yi = int(floor(y))
+	var xf = x - xi
+	var yf = y - yi
+
+	var v00 = _hash(xi,   yi)
+	var v10 = _hash(xi+1, yi)
+	var v01 = _hash(xi,   yi+1)
+	var v11 = _hash(xi+1, yi+1)
+
+	var u = _fade(xf)
+	var v = _fade(yf)
+
+	var i1 = lerp(v00, v10, u)
+	var i2 = lerp(v01, v11, u)
+	return lerp(i1, i2, v) * 2.0 - 1.0
+
+func _fade(t: float) -> float:
+	return t * t * t * (t * (t * 6 - 15) + 10)
+
+func _hash(x: int, y: int) -> float:
+	var h = x * 374761393 + y * 668265263 + noise_seed * 1274126177
+	h = (h ^ (h >> 13)) * 1274126177
+	return float(h & 0x7fffffff) / 1073741824.0
