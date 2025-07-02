@@ -35,7 +35,7 @@ data = PackedVector3Array(-250, 109.809, -250, -247.5, 112.321, -250, -247.5, 11
 [node name="Root" type="Node3D"]
 
 [node name="Sun" type="DirectionalLight3D" parent="."]
-transform = Transform3D(0.507363, 0.314162, 0.802424, -0.819224, -0.113, 0.562232, 0.267283, -0.942627, 0.200037, 0, 0, 0)
+transform = Transform3D(0.961644, 0.274207, 0.0071989, 0.258826, -0.915769, 0.307206, 0.0908302, -0.293559, -0.951616, 0, 0, 0)
 shadow_enabled = true
 directional_shadow_max_distance = 4000.0
 script = ExtResource("1_vvh5c")
