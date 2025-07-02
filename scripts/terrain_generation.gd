@@ -2,18 +2,23 @@
 extends Node3D
 
 # — parâmetros do Inspector —
-@export var plane_size: Vector2        = Vector2(500, 500)
-@export_range(2, 512) var res_x: int   = 100
-@export_range(2, 512) var res_z: int   = 100
-@export var height_amplitude: float    = 10.0
-@export var regenerate: bool           = false
+@export_group("Mesh Settings")
+@export var plane_size : Vector2       = Vector2(500, 500)
+@export_range(2, 512, 1)  var res_x       : int       = 100
+@export_range(2, 512, 1)  var res_z       : int       = 100
 
-# — parâmetros da fBM —
-@export var noise_seed: int            = 0
-@export_range(1, 16) var noise_octaves: int   = 4
-@export var noise_lacunarity: float    = 2.0
-@export var noise_gain: float          = 0.5
-@export var noise_scale: float         = 50.0  # “zoom” do noise
+@export_group("Height Settings")
+@export_range(0.0, 100.0, 0.1) var height_amplitude : float = 10.0
+@export var regenerate                  : bool      = false
+
+@export_group("Noise Settings")
+@export_range(0, 10000, 1)   var noise_seed      : int   = 0
+@export_range(1, 16, 1)      var noise_octaves   : int   = 4
+
+@export_group("Noise fBM Settings")
+@export_range(0.1, 4.0, 0.1)  var noise_lacunarity : float = 2.0
+@export_range(0.0, 1.0, 0.01) var noise_gain       : float = 0.5
+@export_range(1.0, 200.0, 1.0) var noise_scale     : float = 50.0   # “zoom” do noise
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
